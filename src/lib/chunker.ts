@@ -12,12 +12,27 @@ export async function splitIntoChunks(
   text: string,
   options: ChunkerOptions = {},
 ): Promise<string[]> {
+  const chunkSize = options.chunkSize ?? DEFAULT_CHUNK_SIZE;
+  const chunkOverlap = options.chunkOverlap ?? DEFAULT_CHUNK_OVERLAP;
+
+  if (!Number.isInteger(chunkSize) || chunkSize <= 0) {
+    throw new Error(`chunkSize must be a positive integer, received: ${chunkSize}`);
+  }
+  if (!Number.isInteger(chunkOverlap) || chunkOverlap < 0) {
+    throw new Error(`chunkOverlap must be a non-negative integer, received: ${chunkOverlap}`);
+  }
+  if (chunkOverlap >= chunkSize) {
+    throw new Error(
+      `chunkOverlap (${chunkOverlap}) must be smaller than chunkSize (${chunkSize}).`,
+    );
+  }
+
   const normalized = text.replace(/\s+/g, " ").trim();
   if (!normalized) return [];
 
   const splitter = new RecursiveCharacterTextSplitter({
-    chunkSize: options.chunkSize ?? DEFAULT_CHUNK_SIZE,
-    chunkOverlap: options.chunkOverlap ?? DEFAULT_CHUNK_OVERLAP,
+    chunkSize,
+    chunkOverlap,
     separators: ["\n\n", "\n", ". ", "! ", "? ", " ", ""],
   });
 

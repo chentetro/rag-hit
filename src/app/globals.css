@@ -1,10 +1,15 @@
 @import "tailwindcss";
 @plugin "daisyui" {
-  themes: custom-blue;
+  themes: "custom-blue";
 }
 
-/* הגדרת ערכת הנושא המותאמת שלך */
-[data-theme="custom-blue"] {
+/* הגדרת ערכת הנושא המותאמת שלך (DaisyUI v5 theme definition) */
+@plugin "daisyui/theme" {
+  name: "custom-blue";
+  default: true;
+  prefersdark: false;
+  color-scheme: light;
+
   --color-base-100: #ffffff;       /* רקע ראשי - לבן חלק */
   --color-base-200: #f8fafc;       /* רקע משני - אפור-כחלחל בהיר מאוד */
   --color-base-300: #f1f5f9;       /* גוון שלישי נקי */

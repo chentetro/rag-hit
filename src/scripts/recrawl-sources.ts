@@ -49,6 +49,8 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 const EMBEDDING_MODEL = requireEnv("EMBEDDING_MODEL");
 const EMBEDDING_OUTPUT_DIM = requireNumberEnv("EMBEDDING_OUTPUT_DIM");
 
+const FETCH_TIMEOUT_MS = Number(process.env.RECRAWL_FETCH_TIMEOUT_MS ?? 15000);
+
 if (!SUPABASE_URL) {
   throw new Error("Missing SUPABASE_URL (or NEXT_PUBLIC_SUPABASE_URL) in environment.");
 }
@@ -66,6 +68,17 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
 
 function sha256(value: string): string {
   return crypto.createHash("sha256").update(value).digest("hex");
+}
+
+async function fetchWithTimeout(url: string, timeoutMs: number): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(url, { redirect: "follow", signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function arraysEqual(a: string[], b: string[]): boolean {
@@ -125,6 +138,15 @@ async function markSourceCrawled(sourceId: string, title?: string | null): Promi
   if (error) throw error;
 }
 
+type ChunkRow = {
+  source_id: string;
+  content: string;
+  chunk_index: number;
+  content_hash: string;
+  metadata: Record<string, unknown>;
+  embedding: number[];
+};
+
 async function refreshChunksForSource(params: {
   sourceId: string;
   sourceUrl: string;
@@ -133,9 +155,9 @@ async function refreshChunksForSource(params: {
 }): Promise<void> {
   const { sourceId, sourceUrl, sourceTitle, chunks } = params;
 
-  const { error: deleteError } = await supabase.from("document_chunks").delete().eq("source_id", sourceId);
-  if (deleteError) throw deleteError;
-
+  // 1) Embed everything FIRST. If any embedding call fails, we throw here
+  //    before touching the database, so the source keeps its existing chunks.
+  const rows: ChunkRow[] = [];
   for (let start = 0; start < chunks.length; start += EMBED_BATCH_SIZE) {
     const chunkBatch = chunks.slice(start, start + EMBED_BATCH_SIZE);
 
@@ -150,9 +172,9 @@ async function refreshChunksForSource(params: {
       },
     });
 
-    const rows = chunkBatch.map((content, index) => {
+    chunkBatch.forEach((content, index) => {
       const chunkIndex = start + index;
-      return {
+      rows.push({
         source_id: sourceId,
         content,
         chunk_index: chunkIndex,
@@ -164,10 +186,19 @@ async function refreshChunksForSource(params: {
           recrawled_at: new Date().toISOString(),
         },
         embedding: embeddings[index],
-      };
+      });
     });
+  }
 
-    const { error: insertError } = await supabase.from("document_chunks").insert(rows);
+  // 2) Only now swap the data: the unique (source_id, chunk_index) constraint
+  //    forces delete-then-insert, but the slow/failure-prone embedding work is
+  //    already done, so the window where chunks are missing is minimal.
+  const { error: deleteError } = await supabase.from("document_chunks").delete().eq("source_id", sourceId);
+  if (deleteError) throw deleteError;
+
+  for (let start = 0; start < rows.length; start += EMBED_BATCH_SIZE) {
+    const rowBatch = rows.slice(start, start + EMBED_BATCH_SIZE);
+    const { error: insertError } = await supabase.from("document_chunks").insert(rowBatch);
     if (insertError) throw insertError;
   }
 }
@@ -179,7 +210,14 @@ async function processSource(source: SourceRow): Promise<void> {
     return;
   }
 
-  const response = await fetch(normalizedUrl, { redirect: "follow" });
+  let response: Response;
+  try {
+    response = await fetchWithTimeout(normalizedUrl, FETCH_TIMEOUT_MS);
+  } catch (error) {
+    console.warn(`[FAIL] ${source.id} ${normalizedUrl} -> fetch error/timeout`, error);
+    return;
+  }
+
   if (!response.ok) {
     console.warn(`[FAIL] ${source.id} ${normalizedUrl} -> HTTP ${response.status}`);
     return;

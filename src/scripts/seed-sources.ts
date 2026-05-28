@@ -40,10 +40,12 @@ function parseArgs(): SeedOptions {
   const map = new Map<string, string>();
 
   for (const arg of args) {
-    const [k, v] = arg.split("=");
-    if (k?.startsWith("--") && v !== undefined) {
-      map.set(k.slice(2), v);
-    }
+    if (!arg.startsWith("--")) continue;
+    const eqIndex = arg.indexOf("=");
+    if (eqIndex === -1) continue;
+    const key = arg.slice(2, eqIndex);
+    const value = arg.slice(eqIndex + 1);
+    if (key) map.set(key, value);
   }
 
   const startUrl = map.get("startUrl") ?? process.env.SEED_START_URL ?? "https://www.hit.ac.il";
@@ -56,13 +58,48 @@ function parseArgs(): SeedOptions {
 }
 
 /**
- * Live HIT robots.txt (checked during implementation) contains:
- *   User-agent: *
- *   Allow: /
- * i.e. no active Disallow rules right now.
- * Keep this list for strict enforcement if they add new rules later.
+ * Disallow prefixes are fetched and parsed from the live robots.txt at runtime
+ * (see loadRobotsDisallows), so the crawler always honors the current rules
+ * instead of a stale in-code snapshot.
  */
-const HIT_ROBOTS_DISALLOW_PREFIXES: readonly string[] = [];
+let robotsDisallowPrefixes: string[] = [];
+
+function parseRobotsDisallows(robotsTxt: string): string[] {
+  const disallows: string[] = [];
+  let appliesToOurAgent = false;
+
+  for (const rawLine of robotsTxt.split(/\r?\n/)) {
+    const line = rawLine.replace(/#.*$/, "").trim();
+    if (!line) continue;
+
+    const colonIndex = line.indexOf(":");
+    if (colonIndex === -1) continue;
+
+    const field = line.slice(0, colonIndex).trim().toLowerCase();
+    const value = line.slice(colonIndex + 1).trim();
+
+    if (field === "user-agent") {
+      appliesToOurAgent = value === "*";
+    } else if (field === "disallow" && appliesToOurAgent && value) {
+      disallows.push(value.toLowerCase());
+    }
+  }
+
+  return disallows;
+}
+
+async function loadRobotsDisallows(origin: string, timeoutMs: number): Promise<string[]> {
+  try {
+    const robotsUrl = new URL("/robots.txt", origin).toString();
+    const response = await fetchWithTimeout(robotsUrl, timeoutMs);
+    if (!response.ok) return [];
+    const text = await response.text();
+    return parseRobotsDisallows(text);
+  } catch (err) {
+    console.warn(`[ROBOTS] Could not load robots.txt for ${origin}`, err);
+    return [];
+  }
+}
 
 const AUTH_BLOCK_KEYWORDS: readonly string[] = [
   "login",
@@ -82,7 +119,7 @@ const AUTH_BLOCK_KEYWORDS: readonly string[] = [
 ];
 
 function isPathBlockedByRobots(pathname: string): boolean {
-  return HIT_ROBOTS_DISALLOW_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+  return robotsDisallowPrefixes.some((prefix) => pathname.startsWith(prefix));
 }
 
 function hasAuthOrPersonalKeyword(value: string): boolean {
@@ -182,6 +219,12 @@ async function crawlAndSeed(options: SeedOptions): Promise<void> {
   if (!startNormalized) throw new Error(`Invalid start URL: ${options.startUrl}`);
 
   const rootUrl = new URL(startNormalized);
+
+  robotsDisallowPrefixes = await loadRobotsDisallows(rootUrl.origin, options.requestTimeoutMs);
+  console.log(
+    `[ROBOTS] Loaded ${robotsDisallowPrefixes.length} disallow rule(s) from ${rootUrl.origin}/robots.txt`,
+  );
+
   const queue: QueueItem[] = [{ url: startNormalized, depth: 0 }];
   const visited = new Set<string>();
 
@@ -235,13 +278,14 @@ async function crawlAndSeed(options: SeedOptions): Promise<void> {
     const html = await response.text();
     const $ = cheerio.load(html);
 
-    // Optional title update
+    // Optional title update — keep the originally detected source_type so we
+    // don't downgrade e.g. an "faq" URL back to "page".
     const pageTitle = $("title").first().text().trim() || null;
     if (pageTitle) {
       await upsertSource({
         url: current.url,
         title: pageTitle,
-        source_type: "page",
+        source_type: detectSourceType(urlObj),
       });
     }
 
