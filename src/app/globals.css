@@ -1,26 +1,38 @@
 @import "tailwindcss";
-
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@plugin "daisyui" {
+  themes: custom-blue;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+@config "./tailwind.config.ts";
+
+/* הגדרת ערכת הנושא המותאמת שלך */
+[data-theme="custom-blue"] {
+  --color-base-100: #ffffff;       /* רקע ראשי - לבן חלק */
+  --color-base-200: #f8fafc;       /* רקע משני - אפור-כחלחל בהיר מאוד */
+  --color-base-300: #f1f5f9;       /* גוון שלישי נקי */
+  --color-base-content: #0f172a;   /* צבע הכתב - כחול-כהה מאוד (כמעט שחור) */
+
+  --color-primary: #38bdf8;        /* צבע ראשי - כחול בהיר / כחול שמיים (Sky Blue) */
+  --color-primary-content: #ffffff;/* טקסט בתוך כפתור כחול - לבן */
+
+  --color-secondary: #0ea5e9;      /* כחול קצת יותר כהה לאלמנטים משניים */
+  --color-secondary-content: #ffffff;
+
+  --color-accent: #7dd3fc;         /* כחול בהיר מאוד לדגשים */
+  --color-accent-content: #0f172a;
+
+  --color-neutral: #1e293b;        /* צבע ניטרלי כהה */
+  --color-neutral-content: #f8fafc;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ── עיצוב התשובות של ה-AI (Markdown) ──────────────────────────────────────*/
+.prose-chat {
+  @apply text-sm leading-relaxed text-base-content;
 }
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
+.prose-chat p { @apply mb-2 last:mb-0; }
+.prose-chat ul { @apply list-disc pl-5 mb-2 space-y-1; }
+.prose-chat ol { @apply list-decimal pl-5 mb-2 space-y-1; }
+.prose-chat code { @apply bg-base-200 rounded px-1 py-0.5 text-xs font-mono; }
+.prose-chat pre { @apply bg-base-200 rounded-lg p-3 overflow-x-auto mb-2 text-xs; }
+.prose-chat strong { @apply font-semibold; }
+.prose-chat a { @apply underline underline-offset-2 hover:opacity-70 text-primary; }
