@@ -1,0 +1,49 @@
+name: Weekly Recrawl
+
+on:
+  schedule:
+    - cron: "0 0 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: recrawl-worker
+  cancel-in-progress: false
+
+jobs:
+  recrawl:
+    name: Run recrawl worker
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      NODE_ENV: production
+      EMBEDDING_MODEL: ${{ vars.EMBEDDING_MODEL || 'gemini-embedding-001' }}
+      EMBEDDING_OUTPUT_DIM: ${{ vars.EMBEDDING_OUTPUT_DIM || '768' }}
+      RECRAWL_DAYS: ${{ vars.RECRAWL_DAYS || '7' }}
+      RECRAWL_BATCH_SIZE: ${{ vars.RECRAWL_BATCH_SIZE || '20' }}
+      EMBED_BATCH_SIZE: ${{ vars.EMBED_BATCH_SIZE || '24' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js 20 with npm cache
+        uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run weekly recrawl worker
+        run: npx tsx src/scripts/recrawl-sources.ts
