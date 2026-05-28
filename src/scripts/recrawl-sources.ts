@@ -19,9 +19,25 @@ type ExistingChunkRow = {
   content_hash: string;
 };
 
-const RECrawl_DAYS = Number(process.env.RECRAWL_DAYS ?? 7);
-const RECRAWL_BATCH_SIZE = Number(process.env.RECRAWL_BATCH_SIZE ?? 2);
-const EMBED_BATCH_SIZE = Number(process.env.EMBED_BATCH_SIZE ?? 4);
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return value;
+}
+
+function requireNumberEnv(name: string): number {
+  const value = Number(requireEnv(name));
+  if (!Number.isFinite(value)) {
+    throw new Error(`Environment variable ${name} must be a valid number.`);
+  }
+  return value;
+}
+
+const RECrawl_DAYS = requireNumberEnv("RECRAWL_DAYS");
+const RECRAWL_BATCH_SIZE = requireNumberEnv("RECRAWL_BATCH_SIZE");
+const EMBED_BATCH_SIZE = requireNumberEnv("EMBED_BATCH_SIZE");
 
 const SUPABASE_URL =
   (process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(
@@ -30,17 +46,8 @@ const SUPABASE_URL =
   );
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
-const RAW_EMBEDDING_MODEL =
-  process.env.EMBEDDING_MODEL ?? process.env.NEXT_PUBLIC_EMBEDDING_MODEL ?? "gemini-embedding-001";
-
-const LEGACY_EMBEDDING_MODEL_ALIASES: Record<string, string> = {
-  "embedding-001": "gemini-embedding-001",
-  "text-embedding-004": "gemini-embedding-001",
-};
-
-const EMBEDDING_MODEL = LEGACY_EMBEDDING_MODEL_ALIASES[RAW_EMBEDDING_MODEL] ?? RAW_EMBEDDING_MODEL;
-
-const EMBEDDING_OUTPUT_DIM = Number(process.env.EMBEDDING_OUTPUT_DIM ?? 768);
+const EMBEDDING_MODEL = requireEnv("EMBEDDING_MODEL");
+const EMBEDDING_OUTPUT_DIM = requireNumberEnv("EMBEDDING_OUTPUT_DIM");
 
 if (!SUPABASE_URL) {
   throw new Error("Missing SUPABASE_URL (or NEXT_PUBLIC_SUPABASE_URL) in environment.");
@@ -219,12 +226,6 @@ async function processSource(source: SourceRow): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  if (RAW_EMBEDDING_MODEL !== EMBEDDING_MODEL) {
-    console.warn(
-      `Embedding model '${RAW_EMBEDDING_MODEL}' is not supported by @ai-sdk/google. Auto-mapped to '${EMBEDDING_MODEL}'.`,
-    );
-  }
-
   console.log(
     `Starting recrawl pass (days=${RECrawl_DAYS}, batchSize=${RECRAWL_BATCH_SIZE}, embeddingModel=${EMBEDDING_MODEL}, outputDim=${EMBEDDING_OUTPUT_DIM})`,
   );
