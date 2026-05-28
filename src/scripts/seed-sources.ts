@@ -66,7 +66,8 @@ let robotsDisallowPrefixes: string[] = [];
 
 function parseRobotsDisallows(robotsTxt: string): string[] {
   const disallows: string[] = [];
-  let appliesToOurAgent = false;
+  let currentRecordApplies = false;
+  let hasSeenRuleInRecord = false;
 
   for (const rawLine of robotsTxt.split(/\r?\n/)) {
     const line = rawLine.replace(/#.*$/, "").trim();
@@ -79,8 +80,16 @@ function parseRobotsDisallows(robotsTxt: string): string[] {
     const value = line.slice(colonIndex + 1).trim();
 
     if (field === "user-agent") {
-      appliesToOurAgent = value === "*";
-    } else if (field === "disallow" && appliesToOurAgent && value) {
+      if (hasSeenRuleInRecord) {
+        currentRecordApplies = false;
+        hasSeenRuleInRecord = false;
+      }
+      currentRecordApplies = currentRecordApplies || value === "*";
+    } else {
+      hasSeenRuleInRecord = true;
+    }
+
+    if (field === "disallow" && currentRecordApplies && value) {
       disallows.push(value.toLowerCase());
     }
   }
