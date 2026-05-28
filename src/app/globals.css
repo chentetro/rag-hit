@@ -3,8 +3,6 @@
   themes: custom-blue;
 }
 
-@config "./tailwind.config.ts";
-
 /* הגדרת ערכת הנושא המותאמת שלך */
 [data-theme="custom-blue"] {
   --color-base-100: #ffffff;       /* רקע ראשי - לבן חלק */
