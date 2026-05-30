@@ -1,9 +1,9 @@
-import Image from "next/image";
+import { ChatInterface } from "@/components/ChatInterface";
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-     <h1>hello world</h1>
-    </div>
+    <main className="min-h-screen bg-stone-100 p-4 text-stone-950">
+      <ChatInterface />
+    </main>
   );
 }

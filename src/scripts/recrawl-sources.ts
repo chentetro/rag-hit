@@ -36,7 +36,7 @@ function requireNumberEnv(name: string): number {
 }
 
 const RECrawl_DAYS = requireNumberEnv("RECRAWL_DAYS");
-const RECRAWL_BATCH_SIZE = requireNumberEnv("RECRAWL_BATCH_SIZE");
+const RECRAWL_DELAY_MS = requireNumberEnv("RECRAWL_DELAY_MS");
 const EMBED_BATCH_SIZE = requireNumberEnv("EMBED_BATCH_SIZE");
 
 const SUPABASE_URL =
@@ -65,6 +65,12 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
     autoRefreshToken: false,
   },
 });
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
 
 function sha256(value: string): string {
   return crypto.createHash("sha256").update(value).digest("hex");
@@ -102,15 +108,15 @@ function extractTextAndTitle(html: string): { title: string | null; text: string
   return { title, text };
 }
 
-async function getDueSources(limit: number): Promise<SourceRow[]> {
+async function getDueSources(): Promise<SourceRow[]> {
   const threshold = new Date(Date.now() - RECrawl_DAYS * 24 * 60 * 60 * 1000).toISOString();
 
   const { data, error } = await supabase
     .from("sources")
     .select("id, url, title, last_crawled")
+    // Intentionally no title filter: seed discovery inserts many rows with title=NULL.
     .lte("last_crawled", threshold)
-    .order("last_crawled", { ascending: true })
-    .limit(limit);
+    .order("last_crawled", { ascending: true });
 
   if (error) throw error;
   return (data ?? []) as SourceRow[];
@@ -265,10 +271,10 @@ async function processSource(source: SourceRow): Promise<void> {
 
 async function main(): Promise<void> {
   console.log(
-    `Starting recrawl pass (days=${RECrawl_DAYS}, batchSize=${RECRAWL_BATCH_SIZE}, embeddingModel=${EMBEDDING_MODEL}, outputDim=${EMBEDDING_OUTPUT_DIM})`,
+    `Starting recrawl pass (days=${RECrawl_DAYS}, delayMs=${RECRAWL_DELAY_MS}, embeddingModel=${EMBEDDING_MODEL}, outputDim=${EMBEDDING_OUTPUT_DIM})`,
   );
 
-  const dueSources = await getDueSources(RECRAWL_BATCH_SIZE);
+  const dueSources = await getDueSources();
   console.log(`Due sources found: ${dueSources.length}`);
 
   for (const source of dueSources) {
@@ -277,6 +283,7 @@ async function main(): Promise<void> {
     } catch (error) {
       console.error(`[ERROR] source_id=${source.id}`, error);
     }
+    await sleep(RECRAWL_DELAY_MS);
   }
 
   console.log("Recrawl pass complete.");

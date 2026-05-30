@@ -49,7 +49,7 @@ function parseArgs(): SeedOptions {
   }
 
   const startUrl = map.get("startUrl") ?? process.env.SEED_START_URL ?? "https://www.hit.ac.il";
-  const maxPages = Number(map.get("maxPages") ?? process.env.SEED_MAX_PAGES ?? 50);
+  const maxPages = Number(map.get("maxPages") ?? process.env.SEED_MAX_PAGES ?? 2000);
   const maxDepth = Number(map.get("maxDepth") ?? process.env.SEED_MAX_DEPTH ?? 4);
   const requestTimeoutMs = Number(map.get("timeoutMs") ?? process.env.SEED_TIMEOUT_MS ?? 15000);
   const allowSubdomains = (map.get("allowSubdomains") ?? process.env.SEED_ALLOW_SUBDOMAINS ?? "false") === "true";
