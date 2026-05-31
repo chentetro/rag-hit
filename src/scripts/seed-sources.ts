@@ -7,6 +7,7 @@ type SeedOptions = {
   maxPages: number;
   maxDepth: number;
   requestTimeoutMs: number;
+  requestDelayMs: number;
   allowSubdomains: boolean;
 };
 
@@ -52,9 +53,14 @@ function parseArgs(): SeedOptions {
   const maxPages = Number(map.get("maxPages") ?? process.env.SEED_MAX_PAGES ?? 2000);
   const maxDepth = Number(map.get("maxDepth") ?? process.env.SEED_MAX_DEPTH ?? 4);
   const requestTimeoutMs = Number(map.get("timeoutMs") ?? process.env.SEED_TIMEOUT_MS ?? 15000);
+  const requestDelayMs = Number(map.get("delayMs") ?? process.env.SEED_REQUEST_DELAY_MS ?? 1000);
   const allowSubdomains = (map.get("allowSubdomains") ?? process.env.SEED_ALLOW_SUBDOMAINS ?? "false") === "true";
 
-  return { startUrl, maxPages, maxDepth, requestTimeoutMs, allowSubdomains };
+  if (!Number.isFinite(requestDelayMs) || requestDelayMs < 0) {
+    throw new Error("SEED_REQUEST_DELAY_MS must be a non-negative number.");
+  }
+
+  return { startUrl, maxPages, maxDepth, requestTimeoutMs, requestDelayMs, allowSubdomains };
 }
 
 /**
@@ -126,6 +132,12 @@ const AUTH_BLOCK_KEYWORDS: readonly string[] = [
   "profile",
   "dashboard",
 ];
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
 
 function isPathBlockedByRobots(pathname: string): boolean {
   return robotsDisallowPrefixes.some((prefix) => pathname.startsWith(prefix));
@@ -273,8 +285,10 @@ async function crawlAndSeed(options: SeedOptions): Promise<void> {
       response = await fetchWithTimeout(current.url, options.requestTimeoutMs);
     } catch (err) {
       console.warn(`[FETCH FAIL] ${current.url}`, err);
+      await sleep(options.requestDelayMs);
       continue;
     }
+    await sleep(options.requestDelayMs);
 
     if (!response.ok) {
       console.warn(`[HTTP ${response.status}] ${current.url}`);

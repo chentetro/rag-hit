@@ -50,6 +50,7 @@ const EMBEDDING_MODEL = requireEnv("EMBEDDING_MODEL");
 const EMBEDDING_OUTPUT_DIM = requireNumberEnv("EMBEDDING_OUTPUT_DIM");
 
 const FETCH_TIMEOUT_MS = Number(process.env.RECRAWL_FETCH_TIMEOUT_MS ?? 15000);
+const SOURCE_PAGE_SIZE = Number(process.env.RECRAWL_SOURCE_PAGE_SIZE ?? 100);
 
 if (!SUPABASE_URL) {
   throw new Error("Missing SUPABASE_URL (or NEXT_PUBLIC_SUPABASE_URL) in environment.");
@@ -57,6 +58,10 @@ if (!SUPABASE_URL) {
 
 if (!SUPABASE_SERVICE_ROLE_KEY) {
   throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY in environment.");
+}
+
+if (!Number.isInteger(SOURCE_PAGE_SIZE) || SOURCE_PAGE_SIZE <= 0) {
+  throw new Error("RECRAWL_SOURCE_PAGE_SIZE must be a positive integer when provided.");
 }
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -108,15 +113,32 @@ function extractTextAndTitle(html: string): { title: string | null; text: string
   return { title, text };
 }
 
-async function getDueSources(): Promise<SourceRow[]> {
-  const threshold = new Date(Date.now() - RECrawl_DAYS * 24 * 60 * 60 * 1000).toISOString();
+type SourceCursor = {
+  lastCrawled: string;
+  id: string;
+};
 
-  const { data, error } = await supabase
+async function getDueSourcesPage(params: {
+  threshold: string;
+  cursor?: SourceCursor;
+}): Promise<SourceRow[]> {
+  const { threshold, cursor } = params;
+  let query = supabase
     .from("sources")
     .select("id, url, title, last_crawled")
     // Intentionally no title filter: seed discovery inserts many rows with title=NULL.
     .lte("last_crawled", threshold)
-    .order("last_crawled", { ascending: true });
+    .order("last_crawled", { ascending: true })
+    .order("id", { ascending: true })
+    .limit(SOURCE_PAGE_SIZE);
+
+  if (cursor) {
+    query = query.or(
+      `last_crawled.gt.${cursor.lastCrawled},and(last_crawled.eq.${cursor.lastCrawled},id.gt.${cursor.id})`,
+    );
+  }
+
+  const { data, error } = await query;
 
   if (error) throw error;
   return (data ?? []) as SourceRow[];
@@ -270,23 +292,38 @@ async function processSource(source: SourceRow): Promise<void> {
 }
 
 async function main(): Promise<void> {
+  const threshold = new Date(Date.now() - RECrawl_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  let cursor: SourceCursor | undefined;
+  let totalProcessed = 0;
+
   console.log(
-    `Starting recrawl pass (days=${RECrawl_DAYS}, delayMs=${RECRAWL_DELAY_MS}, embeddingModel=${EMBEDDING_MODEL}, outputDim=${EMBEDDING_OUTPUT_DIM})`,
+    `Starting recrawl pass (days=${RECrawl_DAYS}, delayMs=${RECRAWL_DELAY_MS}, pageSize=${SOURCE_PAGE_SIZE}, embeddingModel=${EMBEDDING_MODEL}, outputDim=${EMBEDDING_OUTPUT_DIM})`,
   );
 
-  const dueSources = await getDueSources();
-  console.log(`Due sources found: ${dueSources.length}`);
-
-  for (const source of dueSources) {
-    try {
-      await processSource(source);
-    } catch (error) {
-      console.error(`[ERROR] source_id=${source.id}`, error);
+  while (true) {
+    const dueSources = await getDueSourcesPage({ threshold, cursor });
+    if (dueSources.length === 0) {
+      break;
     }
-    await sleep(RECRAWL_DELAY_MS);
+
+    console.log(`Processing due source page: ${dueSources.length}`);
+
+    for (const source of dueSources) {
+      try {
+        await processSource(source);
+      } catch (error) {
+        console.error(`[ERROR] source_id=${source.id}`, error);
+      }
+      cursor = {
+        lastCrawled: source.last_crawled,
+        id: source.id,
+      };
+      totalProcessed += 1;
+      await sleep(RECRAWL_DELAY_MS);
+    }
   }
 
-  console.log("Recrawl pass complete.");
+  console.log(`Recrawl pass complete. Processed ${totalProcessed} due sources.`);
 }
 
 main().catch((error) => {

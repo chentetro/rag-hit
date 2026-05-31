@@ -28,7 +28,7 @@ function Source({ className, title, href, ...props }: SourceProps) {
         className,
       )}
       href={href}
-      rel="noreferrer"
+      rel="noopener noreferrer"
       target="_blank"
       title={title}
       {...props}

@@ -79,7 +79,7 @@ function MessageBubble({ message }: { message: UIMessage }) {
     <MessageBranch>
       <MessageBranchContent>
         <MessageContent from={isUser ? "user" : "assistant"}>
-          <MessageResponse className={isUser ? "!text-white [&_*]:!text-white" : undefined}>
+          <MessageResponse className={isUser ? "text-white! [&_*]:text-white!" : undefined}>
             {text}
           </MessageResponse>
 
@@ -112,7 +112,12 @@ export function ChatInterface() {
     if (!text || isBusy) return;
 
     setInput("");
-    await sendMessage({ text });
+    try {
+      await sendMessage({ text });
+    } catch (sendError) {
+      console.error("Failed to send chat message:", sendError);
+      setInput(text);
+    }
   }
 
   return (
