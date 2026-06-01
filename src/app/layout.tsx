@@ -23,7 +23,6 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      data-theme="custom-blue"
       className={`${geistSans.variable} ${geistMono.variable} h-full`}
     >
       <body className="min-h-full flex flex-col">{children}</body>

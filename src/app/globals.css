@@ -3,44 +3,16 @@
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
-@plugin "daisyui" {
-  themes: "custom-blue";
-}
-
-/* הגדרת ערכת הנושא המותאמת שלך (DaisyUI v5 theme definition) */
-@plugin "daisyui/theme" {
-  name: "custom-blue";
-  default: true;
-  prefersdark: false;
-  color-scheme: light;
-
-  --color-base-100: #ffffff;       /* רקע ראשי - לבן חלק */
-  --color-base-200: #f5f5f4;       /* רקע משני - Stone בהיר */
-  --color-base-300: #e7e5e4;       /* גוון שלישי נקי */
-  --color-base-content: #1c1917;   /* צבע הכתב - Stone כהה */
-
-  --color-primary: #1c1917;        /* צבע ראשי - שחור/Stone */
-  --color-primary-content: #ffffff;/* טקסט בתוך כפתור כחול - לבן */
-
-  --color-secondary: #78716c;      /* Stone בינוני לאלמנטים משניים */
-  --color-secondary-content: #ffffff;
-
-  --color-accent: #d6d3d1;         /* Stone בהיר לדגשים */
-  --color-accent-content: #1c1917;
-
-  --color-neutral: #292524;        /* צבע ניטרלי כהה */
-  --color-neutral-content: #fafaf9;
-}
 
 /* ── עיצוב התשובות של ה-AI (Markdown) ──────────────────────────────────────*/
 .prose-chat {
-  @apply text-sm leading-relaxed text-base-content;
+  @apply text-sm leading-relaxed text-foreground;
 }
 .prose-chat p { @apply mb-2 last:mb-0; }
 .prose-chat ul { @apply list-disc pl-5 mb-2 space-y-1; }
 .prose-chat ol { @apply list-decimal pl-5 mb-2 space-y-1; }
-.prose-chat code { @apply bg-base-200 rounded px-1 py-0.5 text-xs font-mono; }
-.prose-chat pre { @apply bg-base-200 rounded-lg p-3 overflow-x-auto mb-2 text-xs; }
+.prose-chat code { @apply bg-muted rounded px-1 py-0.5 text-xs font-mono; }
+.prose-chat pre { @apply bg-muted rounded-lg p-3 overflow-x-auto mb-2 text-xs; }
 .prose-chat strong { @apply font-semibold; }
 .prose-chat a { @apply underline underline-offset-2 hover:opacity-70 text-primary; }
 
