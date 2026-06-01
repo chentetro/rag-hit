@@ -122,7 +122,7 @@ export function ChatInterface() {
 
   return (
     <section className="mx-auto flex h-[calc(100vh-2rem)] w-full max-w-4xl flex-col rounded-3xl border border-stone-200 bg-stone-50 shadow-sm">
-      <header className="border-b border-stone-200 px-6 py-4">
+      <header className="border-b border-stone-200 px-6 py-4 text-center">
         <p className="text-xs font-medium uppercase tracking-[0.25em] text-stone-500">
           HIT RAG Assistant
         </p>
@@ -130,7 +130,7 @@ export function ChatInterface() {
           עוזר אקדמי מבוסס מקורות
         </h1>
         <p className="mt-1 text-sm text-stone-600">
-          התשובות נוצרות בעברית אך ורק לפי ההקשר שנמצא במסד הנתונים הווקטורי.
+          התשובות נוצרות בעברית אך ורק לפי ההקשר שנמצא במסד הנתונים.
         </p>
       </header>
 
