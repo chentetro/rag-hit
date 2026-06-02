@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-stone-100 p-4 text-stone-950">
+    <main className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-blue-100 p-4 text-slate-950">
       <ChatInterface />
     </main>
   );

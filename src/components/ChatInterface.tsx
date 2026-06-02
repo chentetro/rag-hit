@@ -121,25 +121,22 @@ export function ChatInterface() {
   }
 
   return (
-    <section className="mx-auto flex h-[calc(100vh-2rem)] w-full max-w-4xl flex-col rounded-3xl border border-stone-200 bg-stone-50 shadow-sm">
-      <header className="border-b border-stone-200 px-6 py-4 text-center">
-        <p className="text-xs font-medium uppercase tracking-[0.25em] text-stone-500">
+    <section className="mx-auto flex h-[calc(100vh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-sky-200 bg-white shadow-xl shadow-sky-100/70">
+      <header className="border-b border-sky-200 bg-gradient-to-r from-sky-600 to-blue-700 px-6 py-5 text-center text-white">
+        <p className="text-xs font-medium uppercase tracking-[0.25em] text-sky-100">
           HIT RAG Assistant
         </p>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-stone-950">
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-white">
           עוזר אקדמי מבוסס מקורות
         </h1>
-        <p className="mt-1 text-sm text-stone-600">
-          התשובות נוצרות בעברית אך ורק לפי ההקשר שנמצא במסד הנתונים.
-        </p>
+      
       </header>
 
       <Conversation>
         <ConversationContent>
           {messages.length === 0 ? (
-            <div className="mx-auto max-w-xl rounded-2xl border border-dashed border-stone-300 bg-white p-6 text-center text-sm text-stone-600">
-              שאל שאלה על מידע שנסרק מאתר HIT. אם המקורות לא מספיקים, המערכת תאמר זאת
-              במקום להמציא תשובה.
+            <div className="mx-auto max-w-xl rounded-2xl border border-dashed border-sky-300 bg-sky-50 p-6 text-center text-sm text-sky-900">
+              שאל שאלה על מידע שנסרק מאתר HIT
             </div>
           ) : (
             messages.map((message) => <MessageBubble key={message.id} message={message} />)
@@ -148,18 +145,18 @@ export function ChatInterface() {
       </Conversation>
 
       {error ? (
-        <div className="border-t border-stone-200 bg-white px-4 py-3 text-sm text-stone-700">
+        <div className="border-t border-sky-200 bg-white px-4 py-3 text-sm text-sky-900">
           שגיאה: {error.message}
         </div>
       ) : null}
 
       <form
-        className="flex gap-2 border-t border-stone-200 bg-white p-4"
+        className="flex gap-2 border-t border-sky-200 bg-white p-4"
         dir="rtl"
         onSubmit={handleSubmit}
       >
         <Input
-          className="h-11 flex-1 border-stone-300 bg-white text-stone-950 placeholder:text-stone-400 focus-visible:ring-stone-400"
+          className="h-11 flex-1 border-sky-200 bg-white text-slate-950 placeholder:text-sky-400 focus-visible:border-sky-500 focus-visible:ring-sky-200"
           disabled={isBusy}
           onChange={(event) => setInput(event.target.value)}
           placeholder="כתוב שאלה על HIT..."
@@ -167,14 +164,14 @@ export function ChatInterface() {
         />
         {isBusy ? (
           <Button
-            className="h-11 bg-stone-950 px-5 text-white hover:bg-stone-800"
+            className="h-11 bg-sky-600 px-5 text-white hover:bg-sky-700"
             onClick={() => void stop()}
             type="button"
           >
             עצור
           </Button>
         ) : (
-          <Button className="h-11 bg-stone-950 px-5 text-white hover:bg-stone-800" type="submit">
+          <Button className="h-11 bg-sky-600 px-5 text-white hover:bg-sky-700" type="submit">
             שלח
           </Button>
         )}

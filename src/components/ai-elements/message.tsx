@@ -46,8 +46,8 @@ function MessageContent({
         className={cn(
           "max-w-[85%] rounded-2xl border px-4 py-3 text-sm leading-7 shadow-sm",
           isUser
-            ? "border-stone-950 bg-stone-950 text-white"
-            : "border-stone-200 bg-white text-stone-950",
+            ? "border-sky-700 bg-sky-600 text-white shadow-sky-100"
+            : "border-sky-100 bg-white text-slate-950 shadow-sky-100/70",
           className,
         )}
         dir="rtl"
@@ -61,7 +61,7 @@ function MessageContent({
 
 function MessageResponse({ children, className }: MessageResponseProps) {
   if (!children) {
-    return <p className="text-stone-500">מחפש תשובה במאגר המידע...</p>;
+    return <p className="text-sky-700">מחפש תשובה במאגר המידע...</p>;
   }
 
   return (
