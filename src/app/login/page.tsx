@@ -5,6 +5,12 @@ export const metadata = {
   description: "Sign in to HIT Assistant with GitHub.",
 };
 
-export default function LoginPage() {
-  return <LoginForm />;
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
+
+  return <LoginForm error={error} />;
 }
