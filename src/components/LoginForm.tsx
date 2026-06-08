@@ -4,7 +4,7 @@ import { FaGithub } from "react-icons/fa";
 
 import { createClient } from "@/lib/supabase/server";
 
-export default function LoginForm() {
+export default function LoginForm({ error }: { error?: string }) {
   async function signIn() {
     "use server";
 
@@ -47,6 +47,12 @@ export default function LoginForm() {
       action={signIn}
       className="flex min-h-screen flex-1 items-center justify-center bg-slate-950 text-white"
     >
+      {error ? (
+        <p className="absolute top-8 max-w-md rounded-lg border border-red-400/40 bg-red-950/80 p-4 text-center text-sm text-red-100">
+          {error}
+        </p>
+      ) : null}
+
       <button
         className="rounded-xl p-8 transition-colors hover:bg-gray-800"
         type="submit"
