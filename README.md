@@ -16,6 +16,4 @@ Because direct access to HIT internal systems is restricted, the system currentl
 
 Future development will include full integration with the college's institutional identity provider (SSO), as well as adding role-based tools and workflows for different user types, ensuring each user role can access capabilities tailored to its specific needs.
 
-## Live Demo
-
-https://rag-hit.vercel.app/
+## [🚀 Live Demo](https://rag-hit.vercel.app/)
