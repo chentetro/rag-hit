@@ -1,36 +1,21 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# HIT RAG Assistant
 
-## Getting Started
+A prototype of the HIT RAG Assistant, a Hebrew academic AI assistant designed for HIT students.
 
-First, run the development server:
+The system is built with Next.js, TypeScript, Supabase, Google AI, Vercel AI SDK, LangChain, Tailwind CSS, and shadcn/Base UI. It crawls and indexes content from the HIT website, chunks the collected data, generates vector embeddings, and stores them in Supabase for semantic retrieval.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Student questions are answered only from verified retrieved sources. The assistant includes a streaming chat interface, source citations, scheduled recrawling with GitHub Actions, and guarded prompting to reduce unsupported answers and hallucinations.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Prototype Status
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+This project is a prototype and is still under active development.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Because direct access to HIT internal systems is restricted, the system currently utilizes GitHub Authentication for user identification instead of the college's institutional login system. Additional user-scoped and organization-specific integrations are simulated with mocks that mirror expected production behavior.
 
-## Learn More
+## Production Roadmap
 
-To learn more about Next.js, take a look at the following resources:
+Future development will include full integration with the college's institutional identity provider (SSO), as well as adding role-based tools and workflows for different user types, ensuring each user role can access capabilities tailored to its specific needs.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Live Demo
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+https://rag-hit.vercel.app/
